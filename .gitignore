@@ -1,0 +1,42 @@
+# --- Node / Next.js (frontend) ---
+node_modules/
+.next/
+out/
+frontend/.next/
+frontend/node_modules/
+frontend/out/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.pnp.*
+
+# Env files
+.env
+.env.local
+.env.*.local
+
+# --- Python / FastAPI (backend) ---
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+.venv/
+backend/venv/
+backend/.venv/
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# --- Uploaded / converted files (should never be committed) ---
+uploads/
+tmp/
+*.tmp
+
+# --- OS / editor ---
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
