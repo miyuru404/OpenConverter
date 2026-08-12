@@ -59,7 +59,18 @@
       "Bash(curl -s --max-time 25 --retry 12 --retry-delay 2 --retry-connrefused -o /dev/null -w \"backend health: HTTP %{http_code}\\\\n\" http://localhost:8000/health)",
       "Bash(curl -s --max-time 25 --retry 12 --retry-delay 2 --retry-connrefused -o /dev/null -w \"static site:    HTTP %{http_code}\\\\n\" http://localhost:4000/)",
       "PowerShell(foreach \\($port in 8000, 4000, 3000\\) { $c = Get-NetTCPConnection -LocalPort $port -State Listen -ErrorAction SilentlyContinue; if \\($c\\) { $c | Select-Object -ExpandProperty OwningProcess -Unique | ForEach-Object { try { Stop-Process -Id $_ -Force -ErrorAction Stop; \"stopped PID $_ on port $port\" } catch { \"PID $_ on port $port already gone\" } } } else { \"port $port : nothing listening\" } }; Start-Sleep -Milliseconds 800; Get-CimInstance Win32_Process -Filter \"Name='python.exe' OR Name='node.exe'\" | Where-Object { $_.CommandLine -match 'uvicorn|http.server|next' } | Select-Object ProcessId, @{n='Cmd';e={$_.CommandLine.Substring\\(0,[Math]::Min\\(70,$_.CommandLine.Length\\)\\)}})",
-      "Bash(node -e \"const p=require\\('./package.json'\\); console.log\\('build script:', p.scripts.build\\); console.log\\('engines:', JSON.stringify\\(p.engines||'none'\\)\\)\")"
+      "Bash(node -e \"const p=require\\('./package.json'\\); console.log\\('build script:', p.scripts.build\\); console.log\\('engines:', JSON.stringify\\(p.engines||'none'\\)\\)\")",
+      "Bash(git ls-remote *)",
+      "Bash(git ls-tree *)",
+      "Bash(curl -s --max-time 120 -w \"\\\\nHTTP %{http_code} | total %{time_total}s\\\\n\" https://openconverter-api.onrender.com/health)",
+      "Bash(curl -s -i --max-time 60 -X OPTIONS -H 'Origin: https://openconverter-web.onrender.com' -H 'Access-Control-Request-Method: POST' https://openconverter-api.onrender.com/api/convert/pdf-to-markdown)",
+      "Bash(curl -s --max-time 60 -X OPTIONS -H 'Origin: https://evil.example.com' -H 'Access-Control-Request-Method: POST' https://openconverter-api.onrender.com/api/convert/pdf-to-markdown)",
+      "Bash(curl -s --max-time 120 -w '\\\\nHTTP %{http_code} | %{time_total}s\\\\n' -H 'Origin: https://openconverter-web.onrender.com' -F file=@C:/Users/Miyuru/AppData/Local/Temp/claude/C--Users-Miyuru-Desktop-OpenConverter/55a97fe7-68d6-4635-8441-396cb0191ce9/scratchpad/sample.pdf https://openconverter-api.onrender.com/api/convert/pdf-to-markdown)",
+      "Bash(curl -s --max-time 120 -o live_batch.zip -w 'HTTP %{http_code} | %{size_download} bytes | %{time_total}s\\\\n' -H 'Origin: https://openconverter-web.onrender.com' -F files=@sample.pdf -F files=@sample2.pdf https://openconverter-api.onrender.com/api/convert/pdf-to-markdown/batch)",
+      "Bash(unzip -l live_batch.zip)",
+      "Bash(curl -s --max-time 60 -w '\\\\nHTTP %{http_code}\\\\n' -H 'Origin: https://openconverter-web.onrender.com' -F file=@notpdf.txt https://openconverter-api.onrender.com/api/convert/pdf-to-markdown)",
+      "PowerShell(& \"C:\\\\Users\\\\Miyuru\\\\Desktop\\\\OpenConverter\\\\backend\\\\venv\\\\Scripts\\\\python.exe\" -m uvicorn main:app --app-dir \"C:\\\\Users\\\\Miyuru\\\\Desktop\\\\OpenConverter\\\\backend\" --host 127.0.0.1 --port 8000)",
+      "Bash(curl -s --max-time 30 --retry 12 --retry-delay 2 --retry-connrefused -o /dev/null -w \"backend health: HTTP %{http_code}\\\\n\" http://localhost:8000/health)"
     ]
   }
 }

@@ -1,5 +1,9 @@
 @import "tailwindcss";
 
+/* Bind Tailwind's `dark:` variant to the data-theme attribute the toggle sets,
+   so utilities follow the explicit choice rather than the OS preference. */
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
 /* Light theme (default) */
 :root {
   --background: #ffffff;
