@@ -4,51 +4,166 @@
    so utilities follow the explicit choice rather than the OS preference. */
 @custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
 
-/* Light theme (default) */
+/* ---------------------------------------------------------------------------
+   Workbench palette.
+
+   Dark is the designed theme and its values come straight from the handoff.
+   Light is derived: the handoff points at the 2b direction (page #f6f5f2, ink
+   #171b1f, hairline #e0ded8) and leaves the rest to us. Two colours could not
+   carry over unchanged — see the notes on --accent-text and --live below.
+--------------------------------------------------------------------------- */
+
+/* Light (derived) */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-  --muted: #6b7280;
-  --border: #d4d4d8;
-  --surface: #fafafa;
-  --accent: #2563eb;
+  --page: #f6f5f2;
+  --rail: #efede8;
+  --surface: #ffffff;
+  --inset: #f6f5f2;
+  --active: #eae8e2;
+
+  --hairline: #e0ded8;
+  --border-card: #e0ded8;
+  --border-field: #d9d6cf;
+  --border-dashed: #cbc7be;
+
+  --text: #171b1f;
+  --text-secondary: #4b5158;
+  --text-muted: #5f646a;
+  --text-faint: #686d73;
+  /* The dark theme's label grey lands at 3.3:1 on a light page. These greys
+     are darkened until small text clears 4.5:1 — including against the rail,
+     which is a shade darker than the cards. */
+  --text-label: #63686e;
+
+  --accent: #0091ad;
+  --accent-hover: #00a3c2;
+  --on-accent: #04181d;
+  /* #0091ad on white is only 3.7:1, which fails for small text. This darker
+     tone is used wherever the accent carries text rather than a background. */
+  --accent-text: #00697e;
+
+  /* The designed #3ddc97 sits at ~1.6:1 on a light page — invisible as text. */
+  --live: #0d7d56;
+  --dot-inactive: #b4b0a7;
+  --soon: #686d73;
 }
 
-/* Dark tokens, shared by system-preference and explicit opt-in.
-   The :not([data-theme="light"]) guard lets an explicit light choice win. */
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-    --muted: #a1a1aa;
-    --border: #2e2e32;
-    --surface: #141416;
-    --accent: #60a5fa;
+    --page: #0e1013;
+    --rail: #0a0b0d;
+    --surface: #14171b;
+    --inset: #0e1013;
+    --active: #16191d;
+
+    --hairline: #1c1f23;
+    --border-card: #1f2328;
+    --border-field: #23272c;
+    --border-dashed: #2c3137;
+
+    --text: #e8eaed;
+    --text-secondary: #9aa1a9;
+    --text-muted: #7d848c;
+    --text-faint: #6b7278;
+    --text-label: #5f666d;
+
+    --accent: #0091ad;
+    --accent-hover: #00a3c2;
+    --on-accent: #04181d;
+    --accent-text: #22b8d4;
+
+    --live: #3ddc97;
+    --dot-inactive: #4b5158;
+    --soon: #8a8f95;
   }
 }
 
 :root[data-theme="dark"] {
-  --background: #0a0a0a;
-  --foreground: #ededed;
-  --muted: #a1a1aa;
-  --border: #2e2e32;
-  --surface: #141416;
-  --accent: #60a5fa;
+  --page: #0e1013;
+  --rail: #0a0b0d;
+  --surface: #14171b;
+  --inset: #0e1013;
+  --active: #16191d;
+
+  --hairline: #1c1f23;
+  --border-card: #1f2328;
+  --border-field: #23272c;
+  --border-dashed: #2c3137;
+
+  --text: #e8eaed;
+  --text-secondary: #9aa1a9;
+  --text-muted: #7d848c;
+  --text-faint: #6b7278;
+  --text-label: #5f666d;
+
+  --accent: #0091ad;
+  --accent-hover: #00a3c2;
+  --on-accent: #04181d;
+  --accent-text: #22b8d4;
+
+  --live: #3ddc97;
+  --dot-inactive: #4b5158;
+  --soon: #8a8f95;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --color-muted: var(--muted);
-  --color-border: var(--border);
+  --color-page: var(--page);
+  --color-rail: var(--rail);
   --color-surface: var(--surface);
+  --color-inset: var(--inset);
+  --color-active: var(--active);
+
+  --color-hairline: var(--hairline);
+  --color-border-card: var(--border-card);
+  --color-border-field: var(--border-field);
+  --color-border-dashed: var(--border-dashed);
+
+  --color-text: var(--text);
+  --color-secondary: var(--text-secondary);
+  --color-muted: var(--text-muted);
+  --color-faint: var(--text-faint);
+  --color-label: var(--text-label);
+
   --color-accent: var(--accent);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-accent-hover: var(--accent-hover);
+  --color-on-accent: var(--on-accent);
+  --color-accent-text: var(--accent-text);
+
+  --color-live: var(--live);
+  --color-dot-inactive: var(--dot-inactive);
+  --color-soon: var(--soon);
+
+  --font-sans: var(--font-archivo);
+  --font-mono: var(--font-plex-mono);
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
+  background: var(--page);
+  color: var(--text);
+  font-family: var(--font-archivo), Helvetica, Arial, sans-serif;
+}
+
+/* The handoff calls for 120–160ms on hover/background changes and no
+   entrance animation. */
+@media (prefers-reduced-motion: no-preference) {
+  a,
+  button,
+  select,
+  input,
+  [data-transition] {
+    transition:
+      background-color 140ms ease,
+      border-color 140ms ease,
+      color 140ms ease,
+      opacity 140ms ease;
+  }
+}
+
+/* Uppercase mono section labels used throughout the shell. */
+.label {
+  font-family: var(--font-plex-mono), ui-monospace, monospace;
+  font-size: 10.5px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-label);
 }

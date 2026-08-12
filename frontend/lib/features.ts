@@ -262,6 +262,61 @@ export const FEATURES: Feature[] = [
   },
 ];
 
+/** Category rows for the sidebar rail, with counts taken from the data. */
+export function categoryCounts(
+  features: Feature[]
+): { category: FeatureCategory; count: number }[] {
+  const order: FeatureCategory[] = ["Documents", "Images", "Data", "Utilities"];
+  return order
+    .map((category) => ({
+      category,
+      count: features.filter((f) => f.category === category).length,
+    }))
+    .filter((row) => row.count > 0);
+}
+
+export function statusCounts(features: Feature[]) {
+  const live = features.filter((f) => f.status === "available").length;
+  return { live, soon: features.length - live };
+}
+
+/** Distinct source formats, for the "From" dropdown. */
+export function fromFormats(features: Feature[]): string[] {
+  return [...new Set(features.map((f) => f.from))].sort();
+}
+
+/** Targets reachable from a given source format, for the "To" dropdown. */
+export function toFormatsFor(features: Feature[], from: string): string[] {
+  return [...new Set(features.filter((f) => f.from === from).map((f) => f.to))].sort();
+}
+
+export function findFeature(
+  features: Feature[],
+  from: string,
+  to: string
+): Feature | undefined {
+  return features.find((f) => f.from === from && f.to === to);
+}
+
+/** Used by the swap control: only swap when the reverse conversion exists. */
+export function hasReverse(features: Feature[], from: string, to: string): boolean {
+  return features.some((f) => f.from === to && f.to === from);
+}
+
+/** Maps a dropped file's extension onto a source format, to preset "From". */
+export function formatForFile(features: Feature[], filename: string): string | null {
+  const extension = filename.toLowerCase().match(/\.[a-z0-9]+$/)?.[0];
+  if (!extension) return null;
+
+  const match = features.find((feature) =>
+    feature.accept
+      .split(",")
+      .map((part) => part.trim().toLowerCase())
+      .includes(extension)
+  );
+  return match ? match.from : null;
+}
+
 const escapeRegExp = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
 /**
