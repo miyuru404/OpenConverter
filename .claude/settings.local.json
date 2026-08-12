@@ -15,7 +15,20 @@
       "Bash(where python3 *)",
       "Bash(py -0)",
       "Read(//c/Users/Miyuru/AppData/Local/Programs/**)",
-      "Read(//c/Program Files/**)"
+      "Read(//c/Program Files/**)",
+      "Bash(python -m pip --version)",
+      "Bash(python -m venv venv)",
+      "Bash(venv/Scripts/python.exe -m pip install --upgrade pip)",
+      "Bash(venv/Scripts/python.exe -m pip install -r requirements.txt)",
+      "Bash(venv/Scripts/python.exe -c ' *)",
+      "Bash(venv/Scripts/python.exe -m uvicorn main:app --port 8000)",
+      "Bash(curl -s --max-time 20 --retry 10 --retry-delay 2 --retry-connrefused http://localhost:8000/health)",
+      "Bash(curl -s --max-time 60 -F \"file=@C:/Users/Miyuru/AppData/Local/Temp/claude/C--Users-Miyuru-Desktop-OpenConverter/55a97fe7-68d6-4635-8441-396cb0191ce9/scratchpad/sample.pdf\" http://localhost:8000/api/convert/pdf-to-markdown)",
+      "Bash(cp sample.pdf sample2.pdf)",
+      "Bash(curl -s --max-time 60 -F \"files=@sample.pdf\" -F \"files=@sample2.pdf\" -o batch.zip -w \"HTTP %{http_code} | %{size_download} bytes\\\\n\" http://localhost:8000/api/convert/pdf-to-markdown/batch)",
+      "Bash(unzip -l batch.zip)",
+      "Bash(printf 'not a pdf')",
+      "Bash(curl -s --max-time 30 -F \"file=@notpdf.txt\" -w \"\\\\nHTTP %{http_code}\\\\n\" http://localhost:8000/api/convert/pdf-to-markdown)"
     ]
   }
 }
