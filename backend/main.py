@@ -2,10 +2,11 @@ import os
 
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import StreamingResponse
+from fastapi.responses import Response, StreamingResponse
 
 from converters.pdf_to_images import DEFAULT_DPI, render_pdf_pages
 from converters.pdf_to_md import convert_pdf_to_markdown
+from converters.pdf_tools import compress_pdf, merge_pdfs, rotate_pdf, split_pdf
 from utils import (
     attachment_headers,
     build_zip,
@@ -109,3 +110,79 @@ async def pdf_to_images(
         media_type="application/zip",
         headers=attachment_headers(f"{stem}-images.zip"),
     )
+
+
+# --- PDF utilities ------------------------------------------------------------
+
+
+def _pdf_response(data: bytes, filename: str) -> Response:
+    return Response(
+        content=data,
+        media_type="application/pdf",
+        headers=attachment_headers(filename),
+    )
+
+
+@app.post("/api/tools/pdf")
+async def pdf_tools(
+    files: list[UploadFile] = File(...),
+    operation: str = Form(...),
+    angle: int = Form(90),
+):
+    check_batch_size(files)
+
+    payloads: list[tuple[str, bytes]] = []
+    for upload in files:
+        payloads.append((file_stem(upload.filename), await read_upload(upload, PDF_ONLY)))
+
+    try:
+        if operation == "merge":
+            merged = merge_pdfs([data for _, data in payloads])
+            return _pdf_response(merged, "merged.pdf")
+
+        if operation == "split":
+            # Multiple inputs all land in one archive, namespaced by source stem.
+            entries = (
+                entry
+                for stem, data in payloads
+                for entry in split_pdf(data, stem)
+            )
+            name = f"{payloads[0][0]}-pages.zip" if len(payloads) == 1 else "split-pages.zip"
+            return StreamingResponse(
+                build_zip(entries),
+                media_type="application/zip",
+                headers=attachment_headers(name),
+            )
+
+        if operation in {"rotate", "compress"}:
+            transform = (
+                (lambda data: rotate_pdf(data, angle))
+                if operation == "rotate"
+                else compress_pdf
+            )
+            suffix = "rotated" if operation == "rotate" else "compressed"
+
+            if len(payloads) == 1:
+                stem, data = payloads[0]
+                return _pdf_response(transform(data), f"{stem}-{suffix}.pdf")
+
+            entries = [
+                (f"{stem}-{suffix}.pdf", transform(data)) for stem, data in payloads
+            ]
+            return StreamingResponse(
+                build_zip(entries),
+                media_type="application/zip",
+                headers=attachment_headers(f"{suffix}.zip"),
+            )
+
+        raise HTTPException(
+            status_code=400,
+            detail=f"Unknown operation '{operation}' "
+            "(expected: merge, split, rotate, compress)",
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(status_code=422, detail=f"Operation failed: {exc}") from exc

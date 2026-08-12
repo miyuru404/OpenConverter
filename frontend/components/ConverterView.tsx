@@ -21,9 +21,15 @@ function filenameFromHeaders(res: Response, fallback: string): string {
   return match ? decodeURIComponent(match[1]) : fallback;
 }
 
-async function postFiles(url: string, files: File[], field: string) {
+async function postFiles(
+  url: string,
+  files: File[],
+  field: string,
+  options: Record<string, string> = {}
+) {
   const formData = new FormData();
   files.forEach((file) => formData.append(field, file));
+  Object.entries(options).forEach(([key, value]) => formData.append(key, value));
 
   const res = await fetch(url, { method: "POST", body: formData });
   if (!res.ok) {
@@ -55,9 +61,20 @@ export default function ConverterView({
   const [isDragging, setIsDragging] = useState(false);
   const [isConverting, setIsConverting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [optionValues, setOptionValues] = useState<Record<string, string>>(() =>
+    Object.fromEntries(
+      (feature.options ?? []).map((option) => [option.name, option.default])
+    )
+  );
   const inputRef = useRef<HTMLInputElement>(null);
 
   const isAvailable = feature.status === "available";
+
+  const visibleOptions = (feature.options ?? []).filter(
+    (option) =>
+      !option.showWhen ||
+      optionValues[option.showWhen.option] === option.showWhen.equals
+  );
 
   const addFiles = (incoming: FileList | null) => {
     if (!incoming || !isAvailable) return;
@@ -75,13 +92,36 @@ export default function ConverterView({
     setError(null);
 
     try {
+      // Only send options that are actually visible for the current selection.
+      const sentOptions = Object.fromEntries(
+        visibleOptions.map((option) => [option.name, optionValues[option.name]])
+      );
+
       if (files.length > 1 && feature.batchEndpoint) {
-        const res = await postFiles(`${API_URL}${feature.batchEndpoint}`, files, "files");
+        const res = await postFiles(
+          `${API_URL}${feature.batchEndpoint}`,
+          files,
+          "files",
+          sentOptions
+        );
         await downloadResult(res, "converted.zip");
+      } else if (feature.uploadMode === "all") {
+        // The operation acts across all files at once (e.g. merge).
+        const res = await postFiles(
+          `${API_URL}${feature.endpoint}`,
+          files,
+          "files",
+          sentOptions
+        );
+        await downloadResult(res, "result");
       } else {
-        // No batch endpoint for this tool — convert one at a time.
         for (const file of files) {
-          const res = await postFiles(`${API_URL}${feature.endpoint}`, [file], "file");
+          const res = await postFiles(
+            `${API_URL}${feature.endpoint}`,
+            [file],
+            "file",
+            sentOptions
+          );
           await downloadResult(res, `${file.name}.zip`);
         }
       }
@@ -140,6 +180,32 @@ export default function ConverterView({
             You&apos;re looking at a preview of the interface. Uploading is disabled until
             the conversion is implemented.
           </p>
+        </div>
+      )}
+
+      {isAvailable && visibleOptions.length > 0 && (
+        <div className="flex flex-wrap gap-4">
+          {visibleOptions.map((option) => (
+            <label key={option.name} className="flex flex-col gap-1.5 text-sm">
+              <span className="font-medium">{option.label}</span>
+              <select
+                value={optionValues[option.name]}
+                onChange={(e) =>
+                  setOptionValues((prev) => ({
+                    ...prev,
+                    [option.name]: e.target.value,
+                  }))
+                }
+                className="rounded-lg border border-border bg-surface px-3 py-2 text-sm outline-none transition-colors focus:border-foreground/30"
+              >
+                {option.choices.map((choice) => (
+                  <option key={choice.value} value={choice.value}>
+                    {choice.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+          ))}
         </div>
       )}
 

@@ -2,6 +2,16 @@ export type FeatureStatus = "available" | "soon";
 
 export type FeatureCategory = "Documents" | "Images" | "Data" | "Utilities";
 
+/** A dropdown rendered on the tool screen and sent as a form field. */
+export interface FeatureOption {
+  name: string;
+  label: string;
+  default: string;
+  choices: { value: string; label: string }[];
+  /** Only show this option while another option holds a given value. */
+  showWhen?: { option: string; equals: string };
+}
+
 export interface Feature {
   id: string;
   title: string;
@@ -19,6 +29,12 @@ export interface Feature {
   endpoint?: string;
   /** API path that converts many files into one zip, where supported. */
   batchEndpoint?: string;
+  /**
+   * "each" posts one file per request; "all" sends every file in a single
+   * request (needed by operations like merge that act across files).
+   */
+  uploadMode?: "each" | "all";
+  options?: FeatureOption[];
 }
 
 export const FEATURES: Feature[] = [
@@ -141,9 +157,35 @@ export const FEATURES: Feature[] = [
     from: "PDF",
     to: "PDF",
     category: "Utilities",
-    status: "soon",
+    status: "available",
     accept: "application/pdf,.pdf",
     keywords: ["merge", "split", "compress", "rotate", "combine", "shrink"],
+    endpoint: "/api/tools/pdf",
+    uploadMode: "all",
+    options: [
+      {
+        name: "operation",
+        label: "Operation",
+        default: "merge",
+        choices: [
+          { value: "merge", label: "Merge into one PDF" },
+          { value: "split", label: "Split into single pages" },
+          { value: "rotate", label: "Rotate pages" },
+          { value: "compress", label: "Compress" },
+        ],
+      },
+      {
+        name: "angle",
+        label: "Rotation",
+        default: "90",
+        showWhen: { option: "operation", equals: "rotate" },
+        choices: [
+          { value: "90", label: "90° clockwise" },
+          { value: "180", label: "180°" },
+          { value: "270", label: "270° clockwise" },
+        ],
+      },
+    ],
   },
 ];
 

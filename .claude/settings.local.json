@@ -85,7 +85,13 @@
       "Bash(curl -s --max-time 90 -o md_batch.zip -w \"HTTP %{http_code} | %{size_download} bytes\\\\n\" -F \"files=@sample.pdf\" -F \"files=@multi.pdf\" http://localhost:8000/api/convert/pdf-to-markdown/batch)",
       "Bash(unzip -l md_batch.zip)",
       "Bash(curl -s --max-time 30 -w \" [HTTP %{http_code}]\\\\n\" -X POST http://localhost:8000/api/convert/pdf-to-markdown/batch)",
-      "Bash(curl -s -i --max-time 60 -H \"Origin: http://localhost:3000\" -F \"file=@multi.pdf\" http://localhost:8000/api/convert/pdf-to-images -o /dev/null -D -)"
+      "Bash(curl -s -i --max-time 60 -H \"Origin: http://localhost:3000\" -F \"file=@multi.pdf\" http://localhost:8000/api/convert/pdf-to-images -o /dev/null -D -)",
+      "PowerShell(Get-NetTCPConnection -LocalPort 8000 -State Listen -ErrorAction SilentlyContinue | Select-Object -ExpandProperty OwningProcess -Unique | ForEach-Object { try { Stop-Process -Id $_ -Force -ErrorAction Stop } catch {} }; Start-Sleep -Milliseconds 900; & \"C:\\\\Users\\\\Miyuru\\\\Desktop\\\\OpenConverter\\\\backend\\\\venv\\\\Scripts\\\\python.exe\" -m uvicorn main:app --app-dir \"C:\\\\Users\\\\Miyuru\\\\Desktop\\\\OpenConverter\\\\backend\" --host 127.0.0.1 --port 8000)",
+      "Bash(curl -s --max-time 30 -w \" [%{http_code}]\\\\n\" -F \"files=@multi.pdf\" -F \"operation=merge\" http://localhost:8000/api/tools/pdf)",
+      "Bash(curl -s --max-time 30 -w \" [%{http_code}]\\\\n\" -F \"files=@multi.pdf\" -F \"operation=explode\" http://localhost:8000/api/tools/pdf)",
+      "Bash(curl -s --max-time 30 -w \" [%{http_code}]\\\\n\" -F \"files=@multi.pdf\" -F \"operation=rotate\" -F \"angle=45\" http://localhost:8000/api/tools/pdf)",
+      "Bash(curl -s --max-time 30 -w \" [%{http_code}]\\\\n\" -F \"files=@notpdf.txt\" -F \"operation=compress\" http://localhost:8000/api/tools/pdf)",
+      "Bash(curl -s --max-time 60 -o multirot.zip -D h5.txt -w \"[%{http_code}] \" -F \"files=@multi.pdf\" -F \"files=@sample.pdf\" -F \"operation=rotate\" -F \"angle=90\" http://localhost:8000/api/tools/pdf)"
     ]
   }
 }
