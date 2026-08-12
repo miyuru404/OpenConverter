@@ -24,7 +24,8 @@ export default function HomeView({
           no installs. Files are deleted after conversion.
         </p>
         <p className="text-sm text-muted">
-          <span className="font-medium text-foreground">{liveCount}</span> tool live ·{" "}
+          <span className="font-medium text-foreground">{liveCount}</span>{" "}
+          {liveCount === 1 ? "tool" : "tools"} live ·{" "}
           <span className="font-medium text-foreground">{FEATURES.length - liveCount}</span>{" "}
           on the way
         </p>

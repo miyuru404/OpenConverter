@@ -49,23 +49,33 @@ later add a custom domain.
 the container wakes. The UI has no loading state for this yet — a user's first conversion
 after a quiet period will just look slow.
 
-**512 MB RAM.** Measured locally:
+**512 MB RAM.** Measured locally with every converter loaded:
 
 | Stage | Memory |
 | --- | --- |
-| baseline | 17 MB |
-| after importing `pymupdf` alone | 48 MB |
-| after importing `pymupdf4llm` | 127 MB |
-| after converting a 1-page PDF | 188 MB |
+| bare Python | 48 MB |
+| idle server (all converters imported) | 145 MB |
+| peak after exercising every converter | 242 MB |
 
-That leaves ~320 MB of headroom. Fine for typical papers; large or image-heavy PDFs could
-push it. `pymupdf4llm` eagerly imports `onnxruntime` (~78 MB of the baseline) via its
-layout dependency — if you don't need layout detection, trimming that dependency would buy
-back most of it.
+That leaves ~270 MB of headroom. Fine for typical documents; large or image-heavy PDFs
+could push it.
+
+Two things keep the idle figure down. `pymupdf4llm` eagerly imports `onnxruntime` (~78 MB)
+via its layout dependency — trimming that would buy back most of the baseline if layout
+detection isn't needed. And the heavier optional libraries (`Pillow`, `python-docx`,
+`python-pptx`, `openpyxl`, `markdown`) are imported *inside* their converter functions
+rather than at module level, so a request that doesn't use them never pays for them. Keep
+that pattern when adding converters.
 
 **Batch conversion holds everything in memory.** `/api/convert/pdf-to-markdown/batch` reads
 every uploaded file and builds the zip in RAM. A large batch is the most likely way to hit
 the memory ceiling. Streaming to a temp file would fix it if that becomes a problem.
+
+**OCR is not deployable on this setup.** It needs the Tesseract binary, which Render's
+native Python runtime can't install — that requires switching the API service to a
+Dockerfile. The pure-Python alternatives (EasyOCR, PaddleOCR) pull PyTorch and would not
+fit in 512 MB at all. The tool is deliberately left marked "Soon" rather than shipped
+broken.
 
 ## Verifying a deploy
 

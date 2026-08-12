@@ -5,9 +5,19 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import Response, StreamingResponse
 
 from converters.citations import extract_bibtex
+from converters.images import (
+    DEFAULT_QUALITY,
+    INPUT_EXTENSIONS as IMAGE_EXTENSIONS,
+    convert_image,
+    output_extension,
+)
+from converters.md_to_pdf import markdown_to_pdf
+from converters.office_to_md import office_to_markdown
+from converters.pdf_to_docx import pdf_to_docx
 from converters.pdf_to_images import DEFAULT_DPI, render_pdf_pages
 from converters.pdf_to_md import convert_pdf_to_markdown
 from converters.pdf_tools import compress_pdf, merge_pdfs, rotate_pdf, split_pdf
+from converters.tables import find_tables, tables_to_csv, tables_to_xlsx
 from utils import (
     attachment_headers,
     build_zip,
@@ -36,6 +46,16 @@ app.add_middleware(
 )
 
 PDF_ONLY = {".pdf"}
+OFFICE_DOCS = {".docx", ".pptx"}
+MARKDOWN_FILES = {".md", ".markdown", ".txt"}
+
+
+def _fail(exc: Exception, filename: str | None = None) -> HTTPException:
+    """ValueError means bad input (400); anything else is a conversion fault."""
+    if isinstance(exc, ValueError):
+        return HTTPException(status_code=400, detail=str(exc))
+    label = f" {filename}" if filename else ""
+    return HTTPException(status_code=422, detail=f"Failed to convert{label}: {exc}")
 
 
 @app.get("/health")
@@ -110,6 +130,159 @@ async def pdf_to_images(
         archive,
         media_type="application/zip",
         headers=attachment_headers(f"{stem}-images.zip"),
+    )
+
+
+# --- Table extraction ---------------------------------------------------------
+
+
+@app.post("/api/extract/tables")
+async def extract_tables(
+    file: UploadFile = File(...),
+    output_format: str = Form("xlsx"),
+):
+    data = await read_upload(file, PDF_ONLY)
+    stem = file_stem(file.filename)
+    output_format = output_format.lower()
+
+    try:
+        tables = find_tables(data)
+    except Exception as exc:
+        raise _fail(exc, file.filename) from exc
+
+    if not tables:
+        raise HTTPException(
+            status_code=422,
+            detail="No tables found in this PDF",
+        )
+
+    if output_format == "xlsx":
+        try:
+            workbook = tables_to_xlsx(tables)
+        except Exception as exc:
+            raise _fail(exc, file.filename) from exc
+        return Response(
+            content=workbook,
+            media_type=(
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            ),
+            headers={
+                **attachment_headers(f"{stem}-tables.xlsx"),
+                "X-Entry-Count": str(len(tables)),
+            },
+        )
+
+    if output_format == "csv":
+        entries = [
+            (f"{stem}-p{page}-table{index}.csv", tables_to_csv(rows))
+            for index, (page, rows) in enumerate(tables, start=1)
+        ]
+        return StreamingResponse(
+            build_zip(entries),
+            media_type="application/zip",
+            headers={
+                **attachment_headers(f"{stem}-tables.zip"),
+                "X-Entry-Count": str(len(tables)),
+            },
+        )
+
+    raise HTTPException(
+        status_code=400,
+        detail=f"Unsupported output format '{output_format}' (expected: xlsx, csv)",
+    )
+
+
+# --- Image format conversion --------------------------------------------------
+
+
+@app.post("/api/convert/image")
+async def image_convert(
+    file: UploadFile = File(...),
+    output_format: str = Form("png"),
+    quality: int = Form(DEFAULT_QUALITY),
+):
+    data = await read_upload(file, IMAGE_EXTENSIONS)
+    stem = file_stem(file.filename)
+
+    try:
+        converted = convert_image(data, output_format, quality)
+        extension = output_extension(output_format)
+    except Exception as exc:
+        raise _fail(exc, file.filename) from exc
+
+    return Response(
+        content=converted,
+        media_type=f"image/{extension}",
+        headers=attachment_headers(f"{stem}.{extension}"),
+    )
+
+
+# --- Markdown to PDF ----------------------------------------------------------
+
+
+@app.post("/api/convert/markdown-to-pdf")
+async def markdown_to_pdf_endpoint(
+    file: UploadFile = File(...),
+    page_size: str = Form("a4"),
+):
+    data = await read_upload(file, MARKDOWN_FILES)
+    stem = file_stem(file.filename)
+
+    try:
+        text = data.decode("utf-8")
+    except UnicodeDecodeError as exc:
+        raise HTTPException(
+            status_code=400, detail=f"{file.filename} is not valid UTF-8 text"
+        ) from exc
+
+    try:
+        pdf = markdown_to_pdf(text, page_size)
+    except Exception as exc:
+        raise _fail(exc, file.filename) from exc
+
+    return _pdf_response(pdf, f"{stem}.pdf")
+
+
+# --- Word / PowerPoint to Markdown --------------------------------------------
+
+
+@app.post("/api/convert/office-to-markdown")
+async def office_markdown(file: UploadFile = File(...)):
+    data = await read_upload(file, OFFICE_DOCS)
+    stem = file_stem(file.filename)
+    extension = os.path.splitext(file.filename or "")[1].lower()
+
+    try:
+        markdown = office_to_markdown(data, extension)
+    except Exception as exc:
+        raise _fail(exc, file.filename) from exc
+
+    return Response(
+        content=markdown.encode("utf-8"),
+        media_type="text/markdown; charset=utf-8",
+        headers=attachment_headers(f"{stem}.md"),
+    )
+
+
+# --- PDF to Word --------------------------------------------------------------
+
+
+@app.post("/api/convert/pdf-to-docx")
+async def pdf_docx(file: UploadFile = File(...)):
+    data = await read_upload(file, PDF_ONLY)
+    stem = file_stem(file.filename)
+
+    try:
+        docx = pdf_to_docx(data)
+    except Exception as exc:
+        raise _fail(exc, file.filename) from exc
+
+    return Response(
+        content=docx,
+        media_type=(
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        ),
+        headers=attachment_headers(f"{stem}.docx"),
     )
 
 

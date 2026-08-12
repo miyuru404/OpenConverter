@@ -97,7 +97,15 @@
       "Bash(curl -s --max-time 30 -w \" [%{http_code}]\\\\n\" -F \"file=@notpdf.txt\" http://localhost:8000/api/extract/citations)",
       "Read(//c/Users/Miyuru/Downloads/Open Converter Logo Design/**)",
       "Read(//c/Users/Miyuru/Downloads/Open Converter Logo Design/logo/**)",
-      "Bash(mkdir -p \"C:/Users/Miyuru/Desktop/OpenConverter/frontend/public/logo\" && cp \"C:/Users/Miyuru/Downloads/Open Converter Logo Design/logo/\"*.svg \"C:/Users/Miyuru/Desktop/OpenConverter/frontend/public/logo/\" && ls -la \"C:/Users/Miyuru/Desktop/OpenConverter/frontend/public/logo/\")"
+      "Bash(mkdir -p \"C:/Users/Miyuru/Desktop/OpenConverter/frontend/public/logo\" && cp \"C:/Users/Miyuru/Downloads/Open Converter Logo Design/logo/\"*.svg \"C:/Users/Miyuru/Desktop/OpenConverter/frontend/public/logo/\" && ls -la \"C:/Users/Miyuru/Desktop/OpenConverter/frontend/public/logo/\")",
+      "Bash(venv/Scripts/python.exe -m pip install openpyxl Pillow markdown python-docx python-pptx)",
+      "Bash(venv/Scripts/python.exe -X utf8 -c ' *)",
+      "Bash(venv/Scripts/python.exe -m pip freeze)",
+      "Bash(curl -s --max-time 40 -w \" [%{http_code}]\\\\n\" -F \"file=@sample.pdf\" http://localhost:8000/api/extract/tables)",
+      "Bash(curl -s --max-time 40 -w \" [%{http_code}]\\\\n\" -F \"file=@tables_ruled.pdf\" -F \"output_format=json\" http://localhost:8000/api/extract/tables)",
+      "Bash(curl -s --max-time 40 -w \" [%{http_code}]\\\\n\" -F \"file=@photo.png\" -F \"output_format=gif\" http://localhost:8000/api/convert/image)",
+      "Bash(curl -s --max-time 40 -w \" [%{http_code}]\\\\n\" -F \"file=@photo.png\" -F \"quality=500\" http://localhost:8000/api/convert/image)",
+      "Bash(curl -s --max-time 40 -w \" [%{http_code}]\\\\n\" -F \"file=@sample.pdf\" http://localhost:8000/api/convert/image)"
     ]
   }
 }

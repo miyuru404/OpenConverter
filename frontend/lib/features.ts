@@ -60,9 +60,10 @@ export const FEATURES: Feature[] = [
     from: "PDF",
     to: "DOCX",
     category: "Documents",
-    status: "soon",
+    status: "available",
     accept: "application/pdf,.pdf",
     keywords: ["word", "editable", "office", "docx"],
+    endpoint: "/api/convert/pdf-to-docx",
   },
   {
     id: "office-to-markdown",
@@ -72,9 +73,10 @@ export const FEATURES: Feature[] = [
     from: "DOCX",
     to: "MD",
     category: "Documents",
-    status: "soon",
+    status: "available",
     accept: ".docx,.pptx",
     keywords: ["word", "powerpoint", "slides", "deck", "office", "pptx"],
+    endpoint: "/api/convert/office-to-markdown",
   },
   {
     id: "markdown-to-pdf",
@@ -84,9 +86,21 @@ export const FEATURES: Feature[] = [
     from: "MD",
     to: "PDF",
     category: "Documents",
-    status: "soon",
-    accept: ".md,.markdown,text/markdown",
+    status: "available",
+    accept: ".md,.markdown,.txt,text/markdown",
     keywords: ["render", "print", "export", "publish"],
+    endpoint: "/api/convert/markdown-to-pdf",
+    options: [
+      {
+        name: "page_size",
+        label: "Page size",
+        default: "a4",
+        choices: [
+          { value: "a4", label: "A4" },
+          { value: "letter", label: "US Letter" },
+        ],
+      },
+    ],
   },
   {
     id: "image-convert",
@@ -96,9 +110,34 @@ export const FEATURES: Feature[] = [
     from: "PNG",
     to: "JPG",
     category: "Images",
-    status: "soon",
-    accept: "image/*",
-    keywords: ["png", "jpg", "jpeg", "webp", "photo", "picture", "resize"],
+    status: "available",
+    accept: ".png,.jpg,.jpeg,.webp,.bmp,.tiff,.tif,.gif",
+    keywords: ["png", "jpg", "jpeg", "webp", "photo", "picture", "bmp", "tiff"],
+    endpoint: "/api/convert/image",
+    options: [
+      {
+        name: "output_format",
+        label: "Convert to",
+        default: "png",
+        choices: [
+          { value: "png", label: "PNG" },
+          { value: "jpg", label: "JPG" },
+          { value: "webp", label: "WebP" },
+          { value: "bmp", label: "BMP" },
+          { value: "tiff", label: "TIFF" },
+        ],
+      },
+      {
+        name: "quality",
+        label: "Quality",
+        default: "85",
+        choices: [
+          { value: "95", label: "High (95)" },
+          { value: "85", label: "Balanced (85)" },
+          { value: "70", label: "Smaller file (70)" },
+        ],
+      },
+    ],
   },
   {
     id: "pdf-to-images",
@@ -112,6 +151,27 @@ export const FEATURES: Feature[] = [
     accept: "application/pdf,.pdf",
     keywords: ["page", "render", "screenshot", "thumbnail", "export"],
     endpoint: "/api/convert/pdf-to-images",
+    options: [
+      {
+        name: "image_format",
+        label: "Format",
+        default: "png",
+        choices: [
+          { value: "png", label: "PNG" },
+          { value: "jpg", label: "JPG" },
+        ],
+      },
+      {
+        name: "dpi",
+        label: "Resolution",
+        default: "150",
+        choices: [
+          { value: "200", label: "High (200 DPI)" },
+          { value: "150", label: "Standard (150 DPI)" },
+          { value: "96", label: "Screen (96 DPI)" },
+        ],
+      },
+    ],
   },
   {
     id: "table-extraction",
@@ -121,9 +181,21 @@ export const FEATURES: Feature[] = [
     from: "PDF",
     to: "CSV",
     category: "Data",
-    status: "soon",
+    status: "available",
     accept: "application/pdf,.pdf",
     keywords: ["excel", "xlsx", "spreadsheet", "csv", "data", "rows"],
+    endpoint: "/api/extract/tables",
+    options: [
+      {
+        name: "output_format",
+        label: "Output",
+        default: "xlsx",
+        choices: [
+          { value: "xlsx", label: "Excel (.xlsx)" },
+          { value: "csv", label: "CSV (zipped)" },
+        ],
+      },
+    ],
   },
   {
     id: "citation-extraction",

@@ -1,5 +1,20 @@
 fastapi==0.141.1
 uvicorn[standard]==0.52.1
 python-multipart==0.0.32
+
+# PDF reading, rendering and manipulation
 pymupdf4llm==1.28.2
 PyMuPDF==1.28.2
+
+# Table extraction to Excel
+openpyxl==3.1.5
+
+# Image format conversion
+pillow==12.3.0
+
+# Markdown to PDF (rendered through PyMuPDF's Story API)
+Markdown==3.10.3
+
+# Word / PowerPoint reading and writing
+python-docx==1.2.0
+python-pptx==1.0.2
