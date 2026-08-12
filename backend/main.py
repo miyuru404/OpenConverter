@@ -1,12 +1,18 @@
-import io
 import os
-import zipfile
 
-from fastapi import FastAPI, File, HTTPException, UploadFile
+from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 
+from converters.pdf_to_images import DEFAULT_DPI, render_pdf_pages
 from converters.pdf_to_md import convert_pdf_to_markdown
+from utils import (
+    attachment_headers,
+    build_zip,
+    check_batch_size,
+    file_stem,
+    read_upload,
+)
 
 app = FastAPI(title="OpenConverter API")
 
@@ -22,7 +28,12 @@ app.add_middleware(
     allow_origins=ALLOWED_ORIGINS,
     allow_methods=["*"],
     allow_headers=["*"],
+    # Not a CORS-safelisted response header, so the browser can't read the
+    # download filename without this.
+    expose_headers=["Content-Disposition"],
 )
+
+PDF_ONLY = {".pdf"}
 
 
 @app.get("/health")
@@ -30,42 +41,71 @@ def health():
     return {"status": "ok"}
 
 
-def _markdown_filename(original: str) -> str:
-    stem = original.rsplit(".", 1)[0] if "." in original else original
-    return f"{stem}.md"
-
-
-async def _read_pdf(file: UploadFile) -> bytes:
-    if file.content_type != "application/pdf" and not file.filename.lower().endswith(".pdf"):
-        raise HTTPException(status_code=400, detail=f"{file.filename} is not a PDF")
-    return await file.read()
+# --- PDF to Markdown ----------------------------------------------------------
 
 
 @app.post("/api/convert/pdf-to-markdown")
-async def convert_single(file: UploadFile = File(...)):
-    data = await _read_pdf(file)
+async def pdf_to_markdown(file: UploadFile = File(...)):
+    data = await read_upload(file, PDF_ONLY)
     try:
         markdown = convert_pdf_to_markdown(data)
     except Exception as exc:
-        raise HTTPException(status_code=422, detail=f"Failed to convert {file.filename}: {exc}") from exc
-    return {"filename": _markdown_filename(file.filename), "markdown": markdown}
+        raise HTTPException(
+            status_code=422, detail=f"Failed to convert {file.filename}: {exc}"
+        ) from exc
+    return {"filename": f"{file_stem(file.filename)}.md", "markdown": markdown}
 
 
 @app.post("/api/convert/pdf-to-markdown/batch")
-async def convert_batch(files: list[UploadFile] = File(...)):
-    buffer = io.BytesIO()
-    with zipfile.ZipFile(buffer, "w", zipfile.ZIP_DEFLATED) as zip_file:
-        for file in files:
-            data = await _read_pdf(file)
-            try:
-                markdown = convert_pdf_to_markdown(data)
-            except Exception as exc:
-                raise HTTPException(status_code=422, detail=f"Failed to convert {file.filename}: {exc}") from exc
-            zip_file.writestr(_markdown_filename(file.filename), markdown)
+async def pdf_to_markdown_batch(files: list[UploadFile] = File(...)):
+    check_batch_size(files)
 
-    buffer.seek(0)
+    entries = []
+    for file in files:
+        data = await read_upload(file, PDF_ONLY)
+        try:
+            markdown = convert_pdf_to_markdown(data)
+        except Exception as exc:
+            raise HTTPException(
+                status_code=422, detail=f"Failed to convert {file.filename}: {exc}"
+            ) from exc
+        entries.append((f"{file_stem(file.filename)}.md", markdown))
+
     return StreamingResponse(
-        buffer,
+        build_zip(entries),
         media_type="application/zip",
-        headers={"Content-Disposition": "attachment; filename=converted.zip"},
+        headers=attachment_headers("markdown.zip"),
+    )
+
+
+# --- PDF to Images ------------------------------------------------------------
+
+
+@app.post("/api/convert/pdf-to-images")
+async def pdf_to_images(
+    file: UploadFile = File(...),
+    image_format: str = Form("png"),
+    dpi: int = Form(DEFAULT_DPI),
+):
+    data = await read_upload(file, PDF_ONLY)
+    stem = file_stem(file.filename)
+
+    try:
+        # Consumed lazily by build_zip, so only one rendered page is held at a time.
+        entries = (
+            (f"{stem}-page-{number:03d}.{image_format.lower()}", image_bytes)
+            for number, image_bytes in render_pdf_pages(data, image_format, dpi)
+        )
+        archive = build_zip(entries)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except Exception as exc:
+        raise HTTPException(
+            status_code=422, detail=f"Failed to convert {file.filename}: {exc}"
+        ) from exc
+
+    return StreamingResponse(
+        archive,
+        media_type="application/zip",
+        headers=attachment_headers(f"{stem}-images.zip"),
     )

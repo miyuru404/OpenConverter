@@ -15,6 +15,10 @@ export interface Feature {
   accept: string;
   /** Extra terms matched by the search box but not shown in the UI. */
   keywords: string[];
+  /** API path for converting a single file. Present once the tool is built. */
+  endpoint?: string;
+  /** API path that converts many files into one zip, where supported. */
+  batchEndpoint?: string;
 }
 
 export const FEATURES: Feature[] = [
@@ -29,6 +33,8 @@ export const FEATURES: Feature[] = [
     status: "available",
     accept: "application/pdf,.pdf",
     keywords: ["paper", "research", "text", "extract", "llm", "markdown"],
+    endpoint: "/api/convert/pdf-to-markdown",
+    batchEndpoint: "/api/convert/pdf-to-markdown/batch",
   },
   {
     id: "pdf-to-docx",
@@ -86,9 +92,10 @@ export const FEATURES: Feature[] = [
     from: "PDF",
     to: "PNG",
     category: "Images",
-    status: "soon",
+    status: "available",
     accept: "application/pdf,.pdf",
     keywords: ["page", "render", "screenshot", "thumbnail", "export"],
+    endpoint: "/api/convert/pdf-to-images",
   },
   {
     id: "table-extraction",

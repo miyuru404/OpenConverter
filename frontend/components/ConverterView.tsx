@@ -14,6 +14,36 @@ function triggerDownload(blob: Blob, filename: string) {
   URL.revokeObjectURL(url);
 }
 
+/** Reads the download name the API set, e.g. `attachment; filename="a.zip"`. */
+function filenameFromHeaders(res: Response, fallback: string): string {
+  const disposition = res.headers.get("content-disposition") ?? "";
+  const match = disposition.match(/filename\*?=(?:UTF-8'')?"?([^\";]+)"?/i);
+  return match ? decodeURIComponent(match[1]) : fallback;
+}
+
+async function postFiles(url: string, files: File[], field: string) {
+  const formData = new FormData();
+  files.forEach((file) => formData.append(field, file));
+
+  const res = await fetch(url, { method: "POST", body: formData });
+  if (!res.ok) {
+    const body = await res.json().catch(() => null);
+    const detail = typeof body?.detail === "string" ? body.detail : null;
+    throw new Error(detail ?? `Conversion failed (${res.status})`);
+  }
+  return res;
+}
+
+/** Converters return either JSON (markdown) or a binary file/zip. */
+async function downloadResult(res: Response, fallbackName: string) {
+  if ((res.headers.get("content-type") ?? "").includes("application/json")) {
+    const { filename, markdown } = await res.json();
+    triggerDownload(new Blob([markdown], { type: "text/markdown" }), filename);
+    return;
+  }
+  triggerDownload(await res.blob(), filenameFromHeaders(res, fallbackName));
+}
+
 export default function ConverterView({
   feature,
   onBack,
@@ -40,38 +70,20 @@ export default function ConverterView({
   };
 
   const handleConvert = async () => {
-    if (files.length === 0 || !isAvailable) return;
+    if (files.length === 0 || !isAvailable || !feature.endpoint) return;
     setIsConverting(true);
     setError(null);
 
     try {
-      if (files.length === 1) {
-        const formData = new FormData();
-        formData.append("file", files[0]);
-
-        const res = await fetch(`${API_URL}/api/convert/pdf-to-markdown`, {
-          method: "POST",
-          body: formData,
-        });
-        if (!res.ok) {
-          const body = await res.json().catch(() => null);
-          throw new Error(body?.detail ?? `Conversion failed (${res.status})`);
-        }
-        const { filename, markdown } = await res.json();
-        triggerDownload(new Blob([markdown], { type: "text/markdown" }), filename);
+      if (files.length > 1 && feature.batchEndpoint) {
+        const res = await postFiles(`${API_URL}${feature.batchEndpoint}`, files, "files");
+        await downloadResult(res, "converted.zip");
       } else {
-        const formData = new FormData();
-        files.forEach((file) => formData.append("files", file));
-
-        const res = await fetch(`${API_URL}/api/convert/pdf-to-markdown/batch`, {
-          method: "POST",
-          body: formData,
-        });
-        if (!res.ok) {
-          const body = await res.json().catch(() => null);
-          throw new Error(body?.detail ?? `Conversion failed (${res.status})`);
+        // No batch endpoint for this tool — convert one at a time.
+        for (const file of files) {
+          const res = await postFiles(`${API_URL}${feature.endpoint}`, [file], "file");
+          await downloadResult(res, `${file.name}.zip`);
         }
-        triggerDownload(await res.blob(), "converted.zip");
       }
       setFiles([]);
     } catch (err) {

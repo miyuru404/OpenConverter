@@ -70,7 +70,22 @@
       "Bash(unzip -l live_batch.zip)",
       "Bash(curl -s --max-time 60 -w '\\\\nHTTP %{http_code}\\\\n' -H 'Origin: https://openconverter-web.onrender.com' -F file=@notpdf.txt https://openconverter-api.onrender.com/api/convert/pdf-to-markdown)",
       "PowerShell(& \"C:\\\\Users\\\\Miyuru\\\\Desktop\\\\OpenConverter\\\\backend\\\\venv\\\\Scripts\\\\python.exe\" -m uvicorn main:app --app-dir \"C:\\\\Users\\\\Miyuru\\\\Desktop\\\\OpenConverter\\\\backend\" --host 127.0.0.1 --port 8000)",
-      "Bash(curl -s --max-time 30 --retry 12 --retry-delay 2 --retry-connrefused -o /dev/null -w \"backend health: HTTP %{http_code}\\\\n\" http://localhost:8000/health)"
+      "Bash(curl -s --max-time 30 --retry 12 --retry-delay 2 --retry-connrefused -o /dev/null -w \"backend health: HTTP %{http_code}\\\\n\" http://localhost:8000/health)",
+      "PowerShell(Get-NetTCPConnection -LocalPort 8000 -State Listen -ErrorAction SilentlyContinue | Select-Object -ExpandProperty OwningProcess -Unique | ForEach-Object { try { Stop-Process -Id $_ -Force -ErrorAction Stop } catch {} }; Start-Sleep -Milliseconds 900; Get-CimInstance Win32_Process -Filter \"Name='python.exe'\" | Where-Object { $_.CommandLine -match 'uvicorn' } | Select-Object ProcessId; \"cleanup done\")",
+      "Bash(curl -s --max-time 40 --retry 12 --retry-delay 2 --retry-connrefused -o /dev/null -w \"health: HTTP %{http_code}\\\\n\" http://localhost:8000/health)",
+      "Bash(curl -s --max-time 90 -o imgs.zip -w \"HTTP %{http_code} | %{size_download} bytes\\\\n\" -F \"file=@multi.pdf\" http://localhost:8000/api/convert/pdf-to-images)",
+      "Bash(unzip -l imgs.zip)",
+      "Bash(curl -s --max-time 90 -o imgs_jpg.zip -w \"HTTP %{http_code} | %{size_download} bytes\\\\n\" -F \"file=@multi.pdf\" -F \"image_format=jpg\" -F \"dpi=100\" http://localhost:8000/api/convert/pdf-to-images)",
+      "Bash(unzip -l imgs_jpg.zip)",
+      "Bash(curl -s --max-time 30 -w \" [HTTP %{http_code}]\\\\n\" -F \"file=@notpdf.txt\" http://localhost:8000/api/convert/pdf-to-images)",
+      "Bash(curl -s --max-time 30 -w \" [HTTP %{http_code}]\\\\n\" -F \"file=@multi.pdf\" -F \"image_format=gif\" http://localhost:8000/api/convert/pdf-to-images)",
+      "Bash(curl -s --max-time 30 -w \" [HTTP %{http_code}]\\\\n\" -F \"file=@multi.pdf\" -F \"dpi=5000\" http://localhost:8000/api/convert/pdf-to-images)",
+      "Bash(:)",
+      "Bash(curl -s --max-time 30 -w \" [HTTP %{http_code}]\\\\n\" -F \"file=@empty.pdf\" http://localhost:8000/api/convert/pdf-to-images)",
+      "Bash(curl -s --max-time 90 -o md_batch.zip -w \"HTTP %{http_code} | %{size_download} bytes\\\\n\" -F \"files=@sample.pdf\" -F \"files=@multi.pdf\" http://localhost:8000/api/convert/pdf-to-markdown/batch)",
+      "Bash(unzip -l md_batch.zip)",
+      "Bash(curl -s --max-time 30 -w \" [HTTP %{http_code}]\\\\n\" -X POST http://localhost:8000/api/convert/pdf-to-markdown/batch)",
+      "Bash(curl -s -i --max-time 60 -H \"Origin: http://localhost:3000\" -F \"file=@multi.pdf\" http://localhost:8000/api/convert/pdf-to-images -o /dev/null -D -)"
     ]
   }
 }
