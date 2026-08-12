@@ -2,7 +2,20 @@
   "permissions": {
     "allow": [
       "Bash(git init *)",
-      "Bash(git add *)"
+      "Bash(git add *)",
+      "Bash(npm -v)",
+      "Bash(pip --version)",
+      "Bash(py --version)",
+      "Bash(py -3 --version)",
+      "Bash(where python *)",
+      "Bash(where py *)",
+      "Bash(npx --yes create-next-app@latest frontend --typescript --tailwind --eslint --app --no-src-dir --import-alias \"@/*\" --use-npm --turbopack)",
+      "Bash(npm install *)",
+      "Bash(npx next *)",
+      "Bash(where python3 *)",
+      "Bash(py -0)",
+      "Read(//c/Users/Miyuru/AppData/Local/Programs/**)",
+      "Read(//c/Program Files/**)"
     ]
   }
 }
