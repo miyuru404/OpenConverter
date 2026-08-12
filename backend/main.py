@@ -4,6 +4,7 @@ from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import Response, StreamingResponse
 
+from converters.citations import extract_bibtex
 from converters.pdf_to_images import DEFAULT_DPI, render_pdf_pages
 from converters.pdf_to_md import convert_pdf_to_markdown
 from converters.pdf_tools import compress_pdf, merge_pdfs, rotate_pdf, split_pdf
@@ -31,7 +32,7 @@ app.add_middleware(
     allow_headers=["*"],
     # Not a CORS-safelisted response header, so the browser can't read the
     # download filename without this.
-    expose_headers=["Content-Disposition"],
+    expose_headers=["Content-Disposition", "X-Entry-Count"],
 )
 
 PDF_ONLY = {".pdf"}
@@ -109,6 +110,34 @@ async def pdf_to_images(
         archive,
         media_type="application/zip",
         headers=attachment_headers(f"{stem}-images.zip"),
+    )
+
+
+# --- Citation extraction ------------------------------------------------------
+
+
+@app.post("/api/extract/citations")
+async def citations(file: UploadFile = File(...)):
+    data = await read_upload(file, PDF_ONLY)
+    stem = file_stem(file.filename)
+
+    try:
+        bibtex, count = extract_bibtex(data)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    except Exception as exc:
+        raise HTTPException(
+            status_code=422, detail=f"Failed to read {file.filename}: {exc}"
+        ) from exc
+
+    return Response(
+        content=bibtex.encode("utf-8"),
+        media_type="application/x-bibtex; charset=utf-8",
+        headers={
+            **attachment_headers(f"{stem}.bib"),
+            # Lets the UI report how many references were found.
+            "X-Entry-Count": str(count),
+        },
     )
 
 

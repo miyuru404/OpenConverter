@@ -133,9 +133,10 @@ export const FEATURES: Feature[] = [
     from: "PDF",
     to: "BIB",
     category: "Data",
-    status: "soon",
+    status: "available",
     accept: "application/pdf,.pdf",
     keywords: ["bibtex", "reference", "bibliography", "zotero", "latex"],
+    endpoint: "/api/extract/citations",
   },
   {
     id: "ocr",
