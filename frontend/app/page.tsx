@@ -77,10 +77,10 @@ export default function Home() {
   };
 
   return (
-    <main className="flex flex-1 flex-col items-center justify-center gap-8 px-4 py-16">
+    <main className="flex flex-1 flex-col items-center justify-center gap-8 px-4 pb-16">
       <div className="flex flex-col items-center gap-2 text-center">
         <h1 className="text-3xl font-semibold">OpenConverter</h1>
-        <p className="text-sm text-gray-500">
+        <p className="text-sm text-muted">
           PDF to Markdown, free, no signup. Drop your files below.
         </p>
       </div>
@@ -99,12 +99,12 @@ export default function Home() {
         onClick={() => inputRef.current?.click()}
         className={`flex w-full max-w-md cursor-pointer flex-col items-center gap-2 rounded-xl border-2 border-dashed p-10 text-center transition-colors ${
           isDragging
-            ? "border-blue-500 bg-blue-500/10"
-            : "border-gray-300 dark:border-gray-700"
+            ? "border-accent bg-accent/10"
+            : "border-border hover:bg-surface"
         }`}
       >
         <p className="font-medium">Drag & drop PDF files here</p>
-        <p className="text-sm text-gray-500">or click to browse</p>
+        <p className="text-sm text-muted">or click to browse</p>
         <input
           ref={inputRef}
           type="file"
@@ -116,13 +116,13 @@ export default function Home() {
       </div>
 
       {files.length > 0 && (
-        <ul className="w-full max-w-md divide-y divide-gray-200 rounded-lg border border-gray-200 dark:divide-gray-800 dark:border-gray-800">
+        <ul className="w-full max-w-md divide-y divide-border rounded-lg border border-border">
           {files.map((file, i) => (
             <li key={`${file.name}-${i}`} className="flex items-center justify-between px-4 py-2 text-sm">
               <span className="truncate">{file.name}</span>
               <button
                 onClick={() => removeFile(i)}
-                className="ml-2 text-gray-400 hover:text-red-500"
+                className="ml-2 text-muted transition-colors hover:text-red-500"
                 aria-label={`Remove ${file.name}`}
               >
                 ✕
@@ -137,7 +137,7 @@ export default function Home() {
       <button
         onClick={handleConvert}
         disabled={files.length === 0 || isConverting}
-        className="rounded-full bg-foreground px-6 py-2 text-sm font-medium text-background disabled:opacity-40"
+        className="rounded-full bg-foreground px-6 py-2 text-sm font-medium text-background transition-opacity hover:opacity-85 disabled:opacity-40"
       >
         {isConverting ? "Converting…" : `Convert${files.length > 1 ? ` ${files.length} files` : ""}`}
       </button>

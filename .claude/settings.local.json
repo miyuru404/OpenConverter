@@ -28,7 +28,12 @@
       "Bash(curl -s --max-time 60 -F \"files=@sample.pdf\" -F \"files=@sample2.pdf\" -o batch.zip -w \"HTTP %{http_code} | %{size_download} bytes\\\\n\" http://localhost:8000/api/convert/pdf-to-markdown/batch)",
       "Bash(unzip -l batch.zip)",
       "Bash(printf 'not a pdf')",
-      "Bash(curl -s --max-time 30 -F \"file=@notpdf.txt\" -w \"\\\\nHTTP %{http_code}\\\\n\" http://localhost:8000/api/convert/pdf-to-markdown)"
+      "Bash(curl -s --max-time 30 -F \"file=@notpdf.txt\" -w \"\\\\nHTTP %{http_code}\\\\n\" http://localhost:8000/api/convert/pdf-to-markdown)",
+      "Bash(curl -s --max-time 10 -o /dev/null -w \"HTTP %{http_code}\\\\n\" http://localhost:3000)",
+      "Bash(curl -s --max-time 10 http://localhost:3000)",
+      "PowerShell(Get-NetTCPConnection -LocalPort 3000 -State Listen -ErrorAction SilentlyContinue | Select-Object -ExpandProperty OwningProcess -Unique | ForEach-Object { Get-Process -Id $_ -ErrorAction SilentlyContinue | Select-Object Id, ProcessName, StartTime })",
+      "Bash(npx eslint *)",
+      "Bash(echo \"eslint exit: $?\")"
     ]
   }
 }
