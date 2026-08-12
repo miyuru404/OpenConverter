@@ -1,0 +1,31 @@
+services:
+  # FastAPI conversion engine
+  - type: web
+    name: openconverter-api
+    runtime: python
+    plan: free
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    envVars:
+      # onnxruntime (pulled in by pymupdf4llm) has no wheels for 3.14 yet.
+      - key: PYTHON_VERSION
+        value: "3.12.7"
+      # Set to the deployed frontend URL once it exists (see DEPLOY.md).
+      - key: ALLOWED_ORIGINS
+        sync: false
+
+  # Next.js frontend, exported to static files
+  - type: web
+    name: openconverter-web
+    runtime: static
+    rootDir: frontend
+    buildCommand: npm ci && npm run build
+    staticPublishPath: out
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      # Baked in at build time — changing it requires a redeploy.
+      - key: NEXT_PUBLIC_API_URL
+        sync: false

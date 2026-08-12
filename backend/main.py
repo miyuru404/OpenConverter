@@ -1,4 +1,5 @@
 import io
+import os
 import zipfile
 
 from fastapi import FastAPI, File, HTTPException, UploadFile
@@ -9,9 +10,16 @@ from converters.pdf_to_md import convert_pdf_to_markdown
 
 app = FastAPI(title="OpenConverter API")
 
+# Comma-separated list of allowed frontend origins; defaults to local dev.
+ALLOWED_ORIGINS = [
+    origin.strip()
+    for origin in os.getenv("ALLOWED_ORIGINS", "http://localhost:3000").split(",")
+    if origin.strip()
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],
+    allow_origins=ALLOWED_ORIGINS,
     allow_methods=["*"],
     allow_headers=["*"],
 )
