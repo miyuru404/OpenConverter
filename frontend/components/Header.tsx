@@ -1,5 +1,6 @@
 "use client";
 
+import Logo from "@/components/Logo";
 import ThemeToggle from "@/components/ThemeToggle";
 
 export default function Header({
@@ -17,7 +18,7 @@ export default function Header({
           aria-label="OpenConverter home"
           className="flex items-center gap-2 font-semibold tracking-tight transition-opacity hover:opacity-70"
         >
-          <LogoMark />
+          <Logo size={22} />
           OpenConverter
         </button>
 
@@ -34,23 +35,5 @@ export default function Header({
         </div>
       </div>
     </header>
-  );
-}
-
-function LogoMark() {
-  return (
-    <svg
-      width="20"
-      height="20"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <path d="M4 8h11l-3-3M20 16H9l3 3" />
-    </svg>
   );
 }

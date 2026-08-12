@@ -94,7 +94,10 @@
       "Bash(curl -s --max-time 60 -o multirot.zip -D h5.txt -w \"[%{http_code}] \" -F \"files=@multi.pdf\" -F \"files=@sample.pdf\" -F \"operation=rotate\" -F \"angle=90\" http://localhost:8000/api/tools/pdf)",
       "Bash(curl -s --max-time 60 -o out.bib -D hb.txt -w \"HTTP %{http_code} | %{size_download}b\\\\n\" -H \"Origin: http://localhost:3000\" -F \"file=@refs_ieee.pdf\" http://localhost:8000/api/extract/citations)",
       "Bash(curl -s --max-time 30 -w \" [%{http_code}]\\\\n\" -F \"file=@multi.pdf\" http://localhost:8000/api/extract/citations)",
-      "Bash(curl -s --max-time 30 -w \" [%{http_code}]\\\\n\" -F \"file=@notpdf.txt\" http://localhost:8000/api/extract/citations)"
+      "Bash(curl -s --max-time 30 -w \" [%{http_code}]\\\\n\" -F \"file=@notpdf.txt\" http://localhost:8000/api/extract/citations)",
+      "Read(//c/Users/Miyuru/Downloads/Open Converter Logo Design/**)",
+      "Read(//c/Users/Miyuru/Downloads/Open Converter Logo Design/logo/**)",
+      "Bash(mkdir -p \"C:/Users/Miyuru/Desktop/OpenConverter/frontend/public/logo\" && cp \"C:/Users/Miyuru/Downloads/Open Converter Logo Design/logo/\"*.svg \"C:/Users/Miyuru/Desktop/OpenConverter/frontend/public/logo/\" && ls -la \"C:/Users/Miyuru/Desktop/OpenConverter/frontend/public/logo/\")"
     ]
   }
 }
