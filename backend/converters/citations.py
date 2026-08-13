@@ -118,23 +118,32 @@ def _guess_title(entry: str, authors: str) -> str:
     return _clean(sentences[0]) if sentences else ""
 
 
+# A sentence break, ignoring the period after an initial such as "Quoc V. Le".
+SENTENCE_BREAK = re.compile(r"(?<![A-Z])\.\s+")
+
+
 def _guess_authors(entry: str) -> str:
     """
-    Authors always come first, so the earliest strong boundary wins. Styles
-    differ on which appears first: APA puts the year early, IEEE puts a quoted
-    title early and the year last — taking the minimum handles both.
+    Authors always come first, so the earliest strong boundary wins.
+
+    Which boundary appears first depends on the style: APA puts the year early,
+    IEEE puts a quoted title early, and NeurIPS-style entries have neither —
+    the year sits at the very end, so only the sentence break after the last
+    author separates them from the title.
     """
     boundaries = []
-    for pattern in (r"[\"“]", r"\(?\b(?:1[89]\d{2}|20\d{2})\b\)?"):
+    for pattern in (
+        r"[\"“]",
+        r"\(?\b(?:1[89]\d{2}|20\d{2})\b\)?",
+        SENTENCE_BREAK,
+    ):
         match = re.search(pattern, entry)
         if match and match.start() > 3:
             boundaries.append(match.start())
 
     if boundaries:
         return _clean(entry[: min(boundaries)])
-
-    sentences = re.split(r"\.\s+", entry)
-    return _clean(sentences[0]) if sentences else ""
+    return _clean(entry)
 
 
 def _cite_key(authors: str, year: str, title: str, index: int) -> str:

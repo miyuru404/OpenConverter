@@ -44,6 +44,10 @@ export default function ConverterPanel({
   const [state, setState] = useState<ConversionState>("idle");
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<{ url: string; name: string } | null>(null);
+  // The API sleeps after ~15 minutes idle on the free tier, and waking it has
+  // been measured at ~43s. Without a word of explanation that reads as a hang.
+  const [isSlow, setIsSlow] = useState(false);
+  const slowTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   // Options are stored alongside the tool they belong to, so switching tools
   // falls back to that tool's defaults during render — no reset effect needed.
   const [optionState, setOptionState] = useState<{
@@ -94,11 +98,18 @@ export default function ConverterPanel({
     [selected, optionValues]
   );
 
+  const clearSlowTimer = () => {
+    if (slowTimer.current) clearTimeout(slowTimer.current);
+    slowTimer.current = null;
+    setIsSlow(false);
+  };
+
   const reset = () => {
     setFiles([]);
     setState("idle");
     setError(null);
     setResult(null);
+    clearSlowTimer();
   };
 
   const addFiles = (incoming: FileList | null) => {
@@ -143,6 +154,10 @@ export default function ConverterPanel({
     if (!selected?.endpoint || files.length === 0) return;
     setState("converting");
     setError(null);
+    setIsSlow(false);
+    // Anything past a few seconds is almost certainly a cold start rather than
+    // the conversion itself, so explain the wait instead of leaving it silent.
+    slowTimer.current = setTimeout(() => setIsSlow(true), 4000);
 
     try {
       const sent = Object.fromEntries(
@@ -187,6 +202,8 @@ export default function ConverterPanel({
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong.");
       setState("error");
+    } finally {
+      clearSlowTimer();
     }
   };
 
@@ -354,15 +371,27 @@ export default function ConverterPanel({
           )}
 
           {files.length > 0 && (
-            <button
-              onClick={convert}
-              disabled={state === "converting" || !isAvailable}
-              className="self-center rounded bg-accent px-6 py-2.5 text-[13.5px] font-medium text-on-accent hover:bg-accent-hover disabled:opacity-50"
-            >
-              {state === "converting"
-                ? "Converting…"
-                : `Convert${files.length > 1 ? ` ${files.length} files` : ""}`}
-            </button>
+            <div className="flex flex-col items-center gap-2.5">
+              <button
+                onClick={convert}
+                disabled={state === "converting" || !isAvailable}
+                className="rounded bg-accent px-6 py-2.5 text-[13.5px] font-medium text-on-accent hover:bg-accent-hover disabled:opacity-50"
+              >
+                {state === "converting"
+                  ? "Converting…"
+                  : `Convert${files.length > 1 ? ` ${files.length} files` : ""}`}
+              </button>
+
+              {state === "converting" && isSlow && (
+                <p
+                  role="status"
+                  className="max-w-sm text-center text-[12.5px] leading-[1.5] text-muted"
+                >
+                  Waking the server — the first conversion after a quiet spell can
+                  take up to a minute. It stays fast after that.
+                </p>
+              )}
+            </div>
           )}
         </>
       )}

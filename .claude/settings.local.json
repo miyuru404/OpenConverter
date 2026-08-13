@@ -108,7 +108,9 @@
       "Bash(curl -s --max-time 40 -w \" [%{http_code}]\\\\n\" -F \"file=@sample.pdf\" http://localhost:8000/api/convert/image)",
       "Bash(python -)",
       "PowerShell(Get-NetTCPConnection -LocalPort 4000 -State Listen -ErrorAction SilentlyContinue | Select-Object -ExpandProperty OwningProcess -Unique | ForEach-Object { try { Stop-Process -Id $_ -Force -ErrorAction Stop } catch {} }; Start-Sleep -Milliseconds 500; Set-Location \"C:\\\\Users\\\\Miyuru\\\\Desktop\\\\OpenConverter\\\\frontend\\\\out\"; & \"C:\\\\Users\\\\Miyuru\\\\Desktop\\\\OpenConverter\\\\backend\\\\venv\\\\Scripts\\\\python.exe\" -m http.server 4000 --bind 127.0.0.1)",
-      "PowerShell(Get-NetTCPConnection -LocalPort 4000 -State Listen -ErrorAction SilentlyContinue | Select-Object -ExpandProperty OwningProcess -Unique | ForEach-Object { try { Stop-Process -Id $_ -Force -ErrorAction Stop } catch {} }; Start-Sleep -Milliseconds 400; \"static test server stopped\")"
+      "PowerShell(Get-NetTCPConnection -LocalPort 4000 -State Listen -ErrorAction SilentlyContinue | Select-Object -ExpandProperty OwningProcess -Unique | ForEach-Object { try { Stop-Process -Id $_ -Force -ErrorAction Stop } catch {} }; Start-Sleep -Milliseconds 400; \"static test server stopped\")",
+      "Bash(curl -sL --max-time 120 -o paper.pdf -w \"HTTP %{http_code} | %{size_download} bytes\\\\n\" \"https://arxiv.org/pdf/1706.03762\")",
+      "Bash(xxd)"
     ]
   }
 }
