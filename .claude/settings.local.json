@@ -112,7 +112,10 @@
       "Bash(curl -sL --max-time 120 -o paper.pdf -w \"HTTP %{http_code} | %{size_download} bytes\\\\n\" \"https://arxiv.org/pdf/1706.03762\")",
       "Bash(xxd)",
       "Bash(curl -s --max-time 90 -o /dev/null -w \"live /docs: HTTP %{http_code}\\\\n\" https://openconverter-api.onrender.com/docs)",
-      "Bash(curl -s --max-time 30 -o /dev/null -w \"live site:  HTTP %{http_code}\\\\n\" https://openconverter-web.onrender.com/)"
+      "Bash(curl -s --max-time 30 -o /dev/null -w \"live site:  HTTP %{http_code}\\\\n\" https://openconverter-web.onrender.com/)",
+      "Bash(git config *)",
+      "Bash(node -e \"const p=require\\('./frontend/package.json'\\); console.log\\('name:',p.name,'| license:',p.license??'\\(none\\)','| private:',p.private??false\\)\")",
+      "Bash(node -e \"const p=require\\('./frontend/package.json'\\); console.log\\('package.json valid JSON, license:', p.license\\)\")"
     ]
   }
 }

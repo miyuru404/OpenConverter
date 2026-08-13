@@ -200,7 +200,7 @@ of the idle footprint.
 
 ## License
 
-(Choose and add a license — e.g. MIT, Apache 2.0 — before making the repo public.)
+[MIT](LICENSE) © Miyuru Bashitha
 
 ## Acknowledgments
 
