@@ -9,7 +9,9 @@ services:
     startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
     healthCheckPath: /health
     envVars:
-      # onnxruntime (pulled in by pymupdf4llm) has no wheels for 3.14 yet.
+      # Conservative pin: onnxruntime (pulled in by pymupdf4llm) doesn't always
+      # publish Linux wheels for the newest Python straight away, and a source
+      # build would blow the free tier's build time.
       - key: PYTHON_VERSION
         value: "3.12.7"
       # Set to the deployed frontend URL once it exists (see DEPLOY.md).
