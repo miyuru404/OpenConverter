@@ -1,0 +1,14 @@
+# The local virtualenv is ~250 MB and would balloon the image while shadowing
+# the dependencies installed inside it.
+venv/
+.venv/
+
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+*.md
+.env
+.env.*

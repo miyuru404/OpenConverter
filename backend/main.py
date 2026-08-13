@@ -12,6 +12,11 @@ from converters.images import (
     output_extension,
 )
 from converters.md_to_pdf import markdown_to_pdf
+from converters.ocr import (
+    DEFAULT_DPI as OCR_DEFAULT_DPI,
+    IMAGE_EXTENSIONS as OCR_IMAGE_EXTENSIONS,
+    ocr_document,
+)
 from converters.office_to_md import office_to_markdown
 from converters.pdf_to_docx import pdf_to_docx
 from converters.pdf_to_images import DEFAULT_DPI, render_pdf_pages
@@ -284,6 +289,37 @@ async def pdf_docx(file: UploadFile = File(...)):
         ),
         headers=attachment_headers(f"{stem}.docx"),
     )
+
+
+# --- OCR ----------------------------------------------------------------------
+
+OCR_INPUTS = PDF_ONLY | OCR_IMAGE_EXTENSIONS
+
+
+@app.post("/api/ocr")
+async def ocr(
+    file: UploadFile = File(...),
+    output_format: str = Form("pdf"),
+    language: str = Form("eng"),
+    dpi: int = Form(OCR_DEFAULT_DPI),
+):
+    data = await read_upload(file, OCR_INPUTS)
+    stem = file_stem(file.filename)
+    extension = os.path.splitext(file.filename or "")[1].lower()
+
+    try:
+        result = ocr_document(data, extension, output_format, language, dpi)
+    except Exception as exc:
+        raise _fail(exc, file.filename) from exc
+
+    if output_format == "txt":
+        return Response(
+            content=str(result).encode("utf-8"),
+            media_type="text/plain; charset=utf-8",
+            headers=attachment_headers(f"{stem}.txt"),
+        )
+
+    return _pdf_response(bytes(result), f"{stem}-searchable.pdf")
 
 
 # --- Citation extraction ------------------------------------------------------

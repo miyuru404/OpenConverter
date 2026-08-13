@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { RecentEntry } from "@/lib/recent";
 import {
+  acceptsFile,
   fromFormats,
   hasReverse,
   findFeature,
@@ -116,13 +117,18 @@ export default function ConverterPanel({
     if (!incoming?.length) return;
     const list = Array.from(incoming);
 
-    // A dropped file tells us the source format; follow it if it maps to a tool.
-    const detected = formatForFile(features, list[0].name);
-    if (detected && detected !== selected?.from) {
-      const next =
-        features.find((f) => f.from === detected && f.status === "available") ??
-        features.find((f) => f.from === detected);
-      if (next) onSelectPair(next);
+    // A dropped file can preset the source format — but only when the current
+    // tool can't handle it. Switching away from a tool the user deliberately
+    // picked would silently run the wrong conversion (drop a scanned PDF on
+    // OCR and you'd get PDF → Markdown instead).
+    if (!selected || !acceptsFile(selected, list[0].name)) {
+      const detected = formatForFile(features, list[0].name);
+      if (detected) {
+        const next =
+          features.find((f) => f.from === detected && f.status === "available") ??
+          features.find((f) => f.from === detected);
+        if (next) onSelectPair(next);
+      }
     }
 
     setFiles((prev) => [...prev, ...list]);

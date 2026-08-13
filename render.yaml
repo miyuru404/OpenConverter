@@ -1,19 +1,16 @@
 services:
-  # FastAPI conversion engine
+  # FastAPI conversion engine.
+  # Runs from a container rather than the native Python runtime because OCR
+  # needs the Tesseract binary, which only apt can install. The Python version
+  # is pinned by the Dockerfile's base image, not by PYTHON_VERSION.
   - type: web
     name: openconverter-api
-    runtime: python
+    runtime: docker
     plan: free
     rootDir: backend
-    buildCommand: pip install -r requirements.txt
-    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    dockerfilePath: ./Dockerfile
     healthCheckPath: /health
     envVars:
-      # Conservative pin: onnxruntime (pulled in by pymupdf4llm) doesn't always
-      # publish Linux wheels for the newest Python straight away, and a source
-      # build would blow the free tier's build time.
-      - key: PYTHON_VERSION
-        value: "3.12.7"
       # Set to the deployed frontend URL once it exists (see DEPLOY.md).
       - key: ALLOWED_ORIGINS
         sync: false

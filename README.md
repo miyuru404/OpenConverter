@@ -14,7 +14,7 @@ Pick a conversion, drop a file in, get the result back. Nothing is stored.
 
 ## Tools
 
-Nine conversions are live:
+All ten conversions are live:
 
 | Tool | From → To | Notes |
 | --- | --- | --- |
@@ -27,11 +27,7 @@ Nine conversions are live:
 | Table Extraction | PDF → XLSX, CSV | One worksheet per table, or zipped CSVs |
 | Citation Extraction | PDF → BibTeX | Parses the reference list into `.bib` entries |
 | PDF Utilities | PDF → PDF | Merge, split, rotate, compress |
-
-Still to come:
-
-* [ ] OCR for scanned PDFs — needs the Tesseract binary, which the current host can't
-  install (see [Known limitations](#known-limitations))
+| OCR | Scanned PDF, image → searchable PDF, TXT | Adds a selectable text layer, or returns plain text |
 
 Have a request? Open an issue.
 
@@ -60,6 +56,12 @@ budget.)
 waking it takes around 45 seconds. The first conversion after a quiet spell is slow; the UI
 says so while you wait. Everything after that is fast.
 
+**OCR is English-only and capped at 25 pages.** Tesseract does the recognition, so accuracy
+depends on scan quality — clean 300 DPI scans read well, photographs of pages much less so.
+Adding a language means installing the matching `tesseract-ocr-<lang>` package in the
+Dockerfile and listing it in `SUPPORTED_LANGUAGES`. It is also by far the slowest tool here:
+every page is rasterised and recognised, so expect several seconds per page.
+
 **Upload limits.** 25 MB per file and 20 files per batch by default, configurable through
 `MAX_UPLOAD_MB` and `MAX_BATCH_FILES`. Individual tools cap pages (100 for rendering, 500 for
 PDF utilities) to stay inside the memory budget.
@@ -68,10 +70,12 @@ PDF utilities) to stay inside the memory budget.
 
 * **Frontend:** [Next.js](https://nextjs.org/) (React, TypeScript, Tailwind) — statically
   exported, so it is served straight from a CDN
-* **Backend:** [FastAPI](https://fastapi.tiangolo.com/) (Python) — the conversion engine
+* **Backend:** [FastAPI](https://fastapi.tiangolo.com/) (Python) — the conversion engine,
+  running from a container so OCR has the Tesseract binary available
 * **Conversion libraries:** `pymupdf4llm` and `PyMuPDF` (PDF reading, rendering, tables, PDF
-  writing), `Pillow` (images), `python-docx` / `python-pptx` (Office), `openpyxl` (Excel),
-  `Markdown` (Markdown → HTML, rendered to PDF through PyMuPDF's Story API)
+  writing, and driving Tesseract for OCR), `Pillow` (images), `python-docx` / `python-pptx`
+  (Office), `openpyxl` (Excel), `Markdown` (Markdown → HTML, rendered to PDF through
+  PyMuPDF's Story API)
 
 ```
 ┌─────────────┐        HTTPS       ┌────────────────────┐
@@ -95,6 +99,7 @@ openconverter/
 │   ├── main.py                # routes
 │   ├── utils.py               # upload limits, zip building, shared helpers
 │   ├── converters/            # one module per conversion
+│   ├── Dockerfile             # image with Tesseract, used for deployment
 │   └── requirements.txt
 ├── render.yaml                # Render Blueprint: both services
 ├── DEPLOY.md                  # deployment guide and free-tier limits
@@ -124,6 +129,7 @@ input or 422 when a conversion fails.
 | POST | `/api/extract/tables` | `file`, `output_format` |
 | POST | `/api/extract/citations` | `file` |
 | POST | `/api/tools/pdf` | `files`, `operation`, `angle` |
+| POST | `/api/ocr` | `file`, `output_format`, `language`, `dpi` |
 
 Interactive docs are served at `/docs`.
 
@@ -152,6 +158,14 @@ On macOS or Linux use `source venv/bin/activate` instead. Then start it:
 
 ```bash
 uvicorn main:app --reload --port 8000
+```
+
+Every tool except OCR works from this virtualenv. OCR additionally needs the Tesseract
+binary on your PATH; without it that one endpoint returns a clear "OCR is unavailable"
+error and everything else carries on. To run the backend exactly as deployed:
+
+```bash
+docker build -t openconverter-api backend && docker run --rm -p 8000:8000 openconverter-api
 ```
 
 3. Set up the frontend

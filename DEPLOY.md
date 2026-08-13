@@ -4,11 +4,26 @@ Both services are defined in [`render.yaml`](render.yaml) as a Render Blueprint:
 
 | Service | Type | What it runs |
 | --- | --- | --- |
-| `openconverter-api` | Web Service (Python) | FastAPI + uvicorn conversion engine |
+| `openconverter-api` | Web Service (Docker) | FastAPI + uvicorn conversion engine |
 | `openconverter-web` | Static Site | Next.js exported to static files |
 
 The frontend is a **static export** (`output: "export"` in `next.config.ts`), so Render
 serves it from a CDN. It never sleeps and costs nothing.
+
+## Why the API runs from a container
+
+The API service builds from [`backend/Dockerfile`](backend/Dockerfile) rather than Render's
+native Python runtime, because OCR needs the Tesseract binary and only `apt` can install it.
+Two consequences:
+
+- **Builds take longer.** The image installs system packages on top of ~250 MB of Python
+  wheels. Dependencies are copied and installed before the application code so that ordinary
+  code changes reuse the cached layer.
+- **`PYTHON_VERSION` no longer applies.** The Dockerfile's base image (`python:3.12-slim`)
+  decides the Python version, so that environment variable was removed from `render.yaml`.
+
+`backend/.dockerignore` excludes the local `venv/`, which would otherwise add ~250 MB to the
+build context and shadow the dependencies installed inside the image.
 
 ## Why two services
 
@@ -45,9 +60,9 @@ later add a custom domain.
 
 ## Free tier limits worth knowing
 
-**The API sleeps after ~15 minutes idle.** The next request waits roughly 50 seconds while
-the container wakes. The UI has no loading state for this yet — a user's first conversion
-after a quiet period will just look slow.
+**The API sleeps after ~15 minutes idle.** The next request waits roughly 45 seconds while
+the container wakes (measured against the live service). After four seconds the converter
+panel explains the wait, so it doesn't read as a hang.
 
 **512 MB RAM.** Measured locally with every converter loaded:
 
@@ -71,11 +86,9 @@ that pattern when adding converters.
 every uploaded file and builds the zip in RAM. A large batch is the most likely way to hit
 the memory ceiling. Streaming to a temp file would fix it if that becomes a problem.
 
-**OCR is not deployable on this setup.** It needs the Tesseract binary, which Render's
-native Python runtime can't install — that requires switching the API service to a
-Dockerfile. The pure-Python alternatives (EasyOCR, PaddleOCR) pull PyTorch and would not
-fit in 512 MB at all. The tool is deliberately left marked "Soon" rather than shipped
-broken.
+**OCR is the heaviest tool.** Each page is rasterised and then handed to Tesseract, which
+keeps its own working copy — so it is capped at 25 pages and 300 DPI. It is also the
+slowest: expect several seconds per page.
 
 ## Verifying a deploy
 
@@ -93,6 +106,17 @@ curl -i -X OPTIONS -H "Origin: https://openconverter-web.onrender.com" -H "Acces
 
 Expect `200` and an `access-control-allow-origin` header echoing your frontend URL. A
 `400 Disallowed CORS origin` means `ALLOWED_ORIGINS` doesn't match the frontend URL exactly.
+
+**Check OCR specifically after the first container deploy**, since it's the one tool that
+depends on something outside Python:
+
+```bash
+curl -F "file=@scan.pdf" -F "output_format=txt" https://openconverter-api.onrender.com/api/ocr
+```
+
+Recognised text means Tesseract is wired up. `OCR is unavailable: Tesseract language data
+was not found` means the image built without it — check the build log for the
+`Resolved TESSDATA_PREFIX to ...` line the Dockerfile prints.
 
 ## Local development
 

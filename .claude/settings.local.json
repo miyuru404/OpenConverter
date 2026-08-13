@@ -115,7 +115,16 @@
       "Bash(curl -s --max-time 30 -o /dev/null -w \"live site:  HTTP %{http_code}\\\\n\" https://openconverter-web.onrender.com/)",
       "Bash(git config *)",
       "Bash(node -e \"const p=require\\('./frontend/package.json'\\); console.log\\('name:',p.name,'| license:',p.license??'\\(none\\)','| private:',p.private??false\\)\")",
-      "Bash(node -e \"const p=require\\('./frontend/package.json'\\); console.log\\('package.json valid JSON, license:', p.license\\)\")"
+      "Bash(node -e \"const p=require\\('./frontend/package.json'\\); console.log\\('package.json valid JSON, license:', p.license\\)\")",
+      "Bash(docker --version)",
+      "Bash(docker info *)",
+      "Bash(tesseract --version)",
+      "Bash(curl -s --max-time 40 --retry 12 --retry-delay 2 --retry-connrefused -o /dev/null -w \"health: %{http_code}\\\\n\" http://localhost:8000/health)",
+      "Bash(curl -s --max-time 60 -w \" [%{http_code}]\\\\n\" -F \"file=@sample.pdf\" http://localhost:8000/api/ocr)",
+      "Bash(curl -s --max-time 40 -w \" [%{http_code}]\\\\n\" -F \"file=@report.docx\" http://localhost:8000/api/ocr)",
+      "Bash(curl -s --max-time 40 -w \" [%{http_code}]\\\\n\" -F \"file=@sample.pdf\" -F \"dpi=1000\" http://localhost:8000/api/ocr)",
+      "Bash(curl -s --max-time 40 -w \" [%{http_code}]\\\\n\" -F \"file=@sample.pdf\" -F \"language=fra\" http://localhost:8000/api/ocr)",
+      "Bash(xargs echo \"  lines:\")"
     ]
   }
 }

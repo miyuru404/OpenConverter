@@ -218,9 +218,31 @@ export const FEATURES: Feature[] = [
     from: "SCAN",
     to: "TEXT",
     category: "Utilities",
-    status: "soon",
-    accept: "application/pdf,.pdf,image/*",
+    status: "available",
+    accept: ".pdf,.png,.jpg,.jpeg,.webp,.bmp,.tiff,.tif",
     keywords: ["scan", "recognise", "recognize", "searchable", "tesseract"],
+    endpoint: "/api/ocr",
+    options: [
+      {
+        name: "output_format",
+        label: "Output",
+        default: "pdf",
+        choices: [
+          { value: "pdf", label: "Searchable PDF" },
+          { value: "txt", label: "Plain text" },
+        ],
+      },
+      {
+        name: "dpi",
+        label: "Accuracy",
+        default: "200",
+        choices: [
+          { value: "300", label: "High (300 DPI, slower)" },
+          { value: "200", label: "Standard (200 DPI)" },
+          { value: "150", label: "Fast (150 DPI)" },
+        ],
+      },
+    ],
   },
   {
     id: "pdf-tools",
@@ -303,17 +325,26 @@ export function hasReverse(features: Feature[], from: string, to: string): boole
   return features.some((f) => f.from === to && f.to === from);
 }
 
+function extensionOf(filename: string): string | null {
+  return filename.toLowerCase().match(/\.[a-z0-9]+$/)?.[0] ?? null;
+}
+
+/** Whether a tool declares support for this file's extension. */
+export function acceptsFile(feature: Feature, filename: string): boolean {
+  const extension = extensionOf(filename);
+  if (!extension) return false;
+  return feature.accept
+    .split(",")
+    .map((part) => part.trim().toLowerCase())
+    .includes(extension);
+}
+
 /** Maps a dropped file's extension onto a source format, to preset "From". */
 export function formatForFile(features: Feature[], filename: string): string | null {
-  const extension = filename.toLowerCase().match(/\.[a-z0-9]+$/)?.[0];
+  const extension = extensionOf(filename);
   if (!extension) return null;
 
-  const match = features.find((feature) =>
-    feature.accept
-      .split(",")
-      .map((part) => part.trim().toLowerCase())
-      .includes(extension)
-  );
+  const match = features.find((feature) => acceptsFile(feature, filename));
   return match ? match.from : null;
 }
 
